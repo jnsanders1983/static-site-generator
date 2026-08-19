@@ -39,3 +39,93 @@ def extract_markdown_links(text: str) -> list[tuple[str, str]]:
     # Finds [anchor text](url) only if NOT preceded by !
     pattern = r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)"
     return re.findall(pattern, text)
+
+def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    
+    for node in old_nodes:
+        # Only split plain text nodes
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
+            
+        current_text = node.text
+        images = extract_markdown_images(current_text)
+        
+        # Tip: If there are no images, return the original node intact
+        if not images:
+            new_nodes.append(node)
+            continue
+            
+        for alt_text, url in images:
+            image_markdown = f"![{alt_text}]({url})"
+            # Tip: Split exactly once at the first occurrence of this image
+            sections = current_text.split(image_markdown, 1)
+            
+            # Tip: Only append if the preceding text is not empty
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+                
+            new_nodes.append(TextNode(alt_text, TextType.IMAGE, url))
+            
+            # Move our cursor text to the remaining portion after the split
+            current_text = sections[1]
+            
+        # Tip: Append any trailing text left over at the end of the loops
+        if current_text != "":
+            new_nodes.append(TextNode(current_text, TextType.TEXT))
+            
+    return new_nodes
+
+
+def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
+    new_nodes = []
+    
+    for node in old_nodes:
+        # Only split plain text nodes
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
+            
+        current_text = node.text
+        links = extract_markdown_links(current_text)
+        
+        # Tip: If there are no links, return the original node intact
+        if not links:
+            new_nodes.append(node)
+            continue
+            
+        for anchor_text, url in links:
+            link_markdown = f"[{anchor_text}]({url})"
+            # Tip: Split exactly once at the first occurrence of this link
+            sections = current_text.split(link_markdown, 1)
+            
+            # Tip: Only append if the preceding text is not empty
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+                
+            new_nodes.append(TextNode(anchor_text, TextType.LINK, url))
+            
+            # Move our cursor text to the remaining portion after the split
+            current_text = sections[1]
+            
+        # Tip: Append any trailing text left over at the end of the loops
+        if current_text != "":
+            new_nodes.append(TextNode(current_text, TextType.TEXT))
+            
+    return new_nodes
+
+def text_to_textnodes(text: str) -> list[TextNode]:
+    # Start with a single plain text node containing the whole string
+    nodes = [TextNode(text, TextType.TEXT)]
+    
+    # Process images and regular links first
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+    
+    # Process inline formatting markdown styles sequentially
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+    
+    return nodes
