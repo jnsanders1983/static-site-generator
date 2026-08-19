@@ -129,3 +129,28 @@ def text_to_textnodes(text: str) -> list[TextNode]:
     nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
     
     return nodes
+
+def markdown_to_blocks(markdown: str) -> list[str]:
+    # Split the document by single newlines first to inspect lines
+    lines = markdown.split("\n")
+    
+    blocks = []
+    current_block_lines = []
+    
+    for line in lines:
+        # If a line is completely empty or just whitespace
+        if line.strip() == "":
+            if current_block_lines:
+                # Join the accumulated lines into a block and save it
+                blocks.append("\n".join(current_block_lines).strip())
+                current_block_lines = []
+        else:
+            current_block_lines.append(line)
+            
+    # Don't forget to append the final block if text didn't end with a newline
+    if current_block_lines:
+        blocks.append("\n".join(current_block_lines).strip())
+        
+    # Final pass to filter out any stray empty strings
+    return [b for b in blocks if b != ""]
+

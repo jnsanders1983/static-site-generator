@@ -1,6 +1,7 @@
 from inline_markdown import ( split_nodes_delimiter, extract_markdown_images, 
                                 extract_markdown_links, split_nodes_image,
-                                split_nodes_link, text_to_textnodes
+                                split_nodes_link, text_to_textnodes,
+                                markdown_to_blocks
                             )  
 from textnode import TextNode, TextType
 
@@ -224,5 +225,70 @@ class TestSplitNodesDelimiter(unittest.TestCase):
     def test_empty_string(self):
         nodes = text_to_textnodes("")
         self.assertListEqual([], nodes)
+
+    def test_markdown_to_blocks(self):
+        # Starter test case with flush-left multiline strings
+        md = """This is **bolded** paragraph
+
+                This is another paragraph with _italic_ text and `code` here
+                This is the same paragraph on a new line
+
+                - This is a list
+                - with items"""
+
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_markdown_to_blocks_excessive_newlines(self):
+        # Ensures that multiple consecutive empty lines are correctly discarded
+        md = """# This is a heading
+
+
+
+This is a normal paragraph block.
+
+
+- List item 1
+- List item 2"""
+        
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "# This is a heading",
+                "This is a normal paragraph block.",
+                "- List item 1\n- List item 2"
+            ]
+        )
+
+    def test_markdown_to_blocks_whitespace_surround(self):
+        # Verifies that leading/trailing document whitespace gets stripped entirely
+        md = """  
+# Heading with leading spaces
+  
+Paragraph block text here.
+  
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "# Heading with leading spaces",
+                "Paragraph block text here."
+            ]
+        )
+
+    def test_markdown_to_blocks_single_block(self):
+        # A single line doc shouldn't break or generate empty trailing blocks
+        md = "Just a lone paragraph."
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(blocks, ["Just a lone paragraph."])
 if __name__ == "__main__":
     unittest.main()
