@@ -85,12 +85,20 @@ def _heading_to_html(block: str) -> ParentNode:
     return ParentNode(tag=f"h{level}", children=text_to_children(clean_text))
 
 def _code_to_html(block: str) -> ParentNode:
-    # Extracts block content without running text through inline parsing
+    """
+    Safely extracts multi-line literal block data and structures it inside 
+    a clean <pre><code>...</code></pre> tag combination.
+    """
+    # 1. Strip out the raw leading ```\n and trailing ``` fences
     code_text = block[4:-3] + "\n"
-    inner_code_node = text_node_to_html_node(TextNode(code_text, TextType.CODE))
-    # code inside pre requires ParentNode wrapping
-    code_parent = ParentNode(tag="code", children=[inner_code_node])
+    
+    # 2. Create the inner text block as plain TextType.TEXT to prevent double-tagging
+    inner_text_node = text_node_to_html_node(TextNode(code_text, TextType.TEXT))
+    
+    # 3. Wrap it in a single 'code' parent node, then return under 'pre'
+    code_parent = ParentNode(tag="code", children=[inner_text_node])
     return ParentNode(tag="pre", children=[code_parent])
+
 
 def _quote_to_html(block: str) -> ParentNode:
     lines = block.split("\n")

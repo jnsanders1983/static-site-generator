@@ -1,7 +1,11 @@
 #!/bin/bash
+set -e
 
-# 1. Execute compilation and transformation routines
-python3 src/main.py
+# Capture the argument passed to main.sh, defaulting to "/" if empty
+BASEPATH=${1:-"/"}
 
-# 2. Jump inside distribution environment and spawn the development server network listener
+echo "--- Initiating Production Site Compilation ---"
+python3 src/main.py "$BASEPATH"
+
+echo "--- Booting Development Web Server ---"
 cd public && python3 -m http.server 8888
