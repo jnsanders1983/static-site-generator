@@ -130,27 +130,29 @@ def text_to_textnodes(text: str) -> list[TextNode]:
     
     return nodes
 
-def markdown_to_blocks(markdown: str) -> list[str]:
-    # Split the document by single newlines first to inspect lines
+def markdown_to_blocks(markdown):
+    # 1. Split the entire document into single lines
     lines = markdown.split("\n")
     
     blocks = []
     current_block_lines = []
     
     for line in lines:
-        # If a line is completely empty or just whitespace
-        if line.strip() == "":
-            if current_block_lines:
-                # Join the accumulated lines into a block and save it
-                blocks.append("\n".join(current_block_lines).strip())
-                current_block_lines = []
-        else:
-            current_block_lines.append(line)
-            
-    # Don't forget to append the final block if text didn't end with a newline
-    if current_block_lines:
-        blocks.append("\n".join(current_block_lines).strip())
+        stripped_line = line.strip()
         
-    # Final pass to filter out any stray empty strings
-    return [b for b in blocks if b != ""]
+        if stripped_line == "":
+            # We hit an empty line (or whitespace line). 
+            # If we have collected lines, save them as a block.
+            if current_block_lines:
+                blocks.append("\n".join(current_block_lines))
+                current_block_lines = []  # Reset for the next block
+        else:
+            # It's a valid line, add it to our current block
+            current_block_lines.append(stripped_line)
+            
+    # Don't forget to save the very last block if the file doesn't end in a newline
+    if current_block_lines:
+        blocks.append("\n".join(current_block_lines))
+        
+    return blocks
 

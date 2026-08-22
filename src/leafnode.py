@@ -1,5 +1,5 @@
 from __future__ import annotations
-from src.htmlnode import HTMLNode  # Adjust the import path if needed
+from htmlnode import HTMLNode
 
 
 class LeafNode(HTMLNode):
